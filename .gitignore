@@ -2,3 +2,4 @@ node_modules/
 .pnpm/
 .env*
 !.env.example
+dist/
