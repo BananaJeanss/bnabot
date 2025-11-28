@@ -9,6 +9,12 @@
     "outDir": "dist",
     "rootDir": "src",
 
+    "baseUrl": "./src",
+    "paths": {
+      "#utilities/*": ["utilities/*"],
+      "#commands/*": ["commands/*"]
+    },
+
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
