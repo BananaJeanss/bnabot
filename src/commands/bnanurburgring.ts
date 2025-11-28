@@ -1,3 +1,4 @@
+import { fetchCurrentWeatherApi } from "#utilities/weatherapi.js";
 import { App } from "@slack/bolt";
 import * as cheerio from "cheerio";
 
@@ -10,6 +11,10 @@ export default function bnanurburgring(app: App) {
     ).then((r) => r.text());
 
     const $ = cheerio.load(html);
+
+    const weather = await fetchCurrentWeatherApi("Nürburg, Rhineland-Palatinate, Germany").then((data) => {
+        return `${data.current.temp_c}°C, ${data.current.condition.text}, Humidity: ${data.current.humidity}%, Wind: ${data.current.wind_kph} kph`;
+    });
 
     const sections: { title: string; items: string[] }[] = [];
 
@@ -62,8 +67,17 @@ export default function bnanurburgring(app: App) {
                 type: "header",
                 text: {
                     type: "plain_text",
-                    text: "Nürburgring Opening Hours",
+                    text: "Nürburgring Data & Opening Hours",
                 }
+            },
+            {
+                type: "context",
+                elements: [
+                    {
+                        type: "mrkdwn",
+                        text: `${weather}`,
+                    }
+                ]
             },
             {
                 type: "section",
