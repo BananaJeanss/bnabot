@@ -2,6 +2,8 @@ import { App } from "@slack/bolt";
 
 const HACKATIME_API_KEY = process.env.HACKATIME_API_KEY;
 const SLACK_USERID = process.env.SLACK_USERID;
+const GITHUB_TOKEN = process.env.GITHUB_WEEKLYTOKEN
+const GITHUB_USERNAME = process.env.GITHUB_WEEKLYUSERNAME;
 
 interface Heartbeat {
   time: number;
@@ -85,13 +87,78 @@ async function getWeeklyTime(): Promise<string> {
     .padStart(2, "0")}m`;
 }
 
+interface GitHubContributionResponse {
+  data: {
+    user: {
+      contributionsCollection: {
+        contributionCalendar: {
+          totalContributions: number;
+          weeks: {
+            contributionDays: {
+              contributionCount: number;
+              date: string;
+            }[];
+          }[];
+        };
+      };
+    };
+  };
+}
 
+async function getGitHubWeeklyContributions(): Promise<number> {
+  if (!GITHUB_TOKEN || !GITHUB_USERNAME) return 0;
+
+  const now = new Date();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(now.getDate() - 7);
+
+  const query = `
+    query($username: String!, $from: DateTime!, $to: DateTime!) {
+      user(login: $username) {
+        contributionsCollection(from: $from, to: $to) {
+          contributionCalendar {
+            totalContributions
+          }
+        }
+      }
+    }
+  `;
+
+  const variables = {
+    username: GITHUB_USERNAME,
+    from: sevenDaysAgo.toISOString(),
+    to: now.toISOString(),
+  };
+
+  try {
+    const res = await fetch("https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+
+    if (!res.ok) return 0;
+
+    const data = (await res.json()) as GitHubContributionResponse;
+    return (
+      data.data?.user?.contributionsCollection?.contributionCalendar
+        ?.totalContributions || 0
+    );
+  } catch (error) {
+    console.error("Error fetching GitHub contributions:", error);
+    return 0;
+  }
+}
 
 export default function bnaweekly(app: App) {
   app.command("/bnaweekly", async ({ ack, respond, command, client }) => {
     await ack();
 
     const weeklyHackTime = await getWeeklyTime();
+    const weeklyGitHub = await getGitHubWeeklyContributions();
     const userInfo = await client.users.info({ user: SLACK_USERID! });
     const SlackPFPUrl = userInfo.user?.profile?.image_192 || userInfo.user?.profile?.image_original || "";
 
@@ -109,7 +176,7 @@ export default function bnaweekly(app: App) {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Hackatime:* ${weeklyHackTime}`,
+            text: `*Hackatime:* ${weeklyHackTime}\n*GitHub Contributions:* ${weeklyGitHub}`,
           },
           accessory: {
             type: "image",
@@ -122,7 +189,7 @@ export default function bnaweekly(app: App) {
             elements: [
                 {
                     type: "mrkdwn",
-                    text: `<@${command.user_id}`
+                    text: `<@${command.user_id}>`
                 }
             ]
         }
