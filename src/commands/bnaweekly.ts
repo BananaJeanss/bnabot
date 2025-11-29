@@ -4,6 +4,8 @@ const HACKATIME_API_KEY = process.env.HACKATIME_API_KEY;
 const SLACK_USERID = process.env.SLACK_USERID;
 const GITHUB_TOKEN = process.env.GITHUB_WEEKLYTOKEN
 const GITHUB_USERNAME = process.env.GITHUB_WEEKLYUSERNAME;
+const STEAM_WEEKLYKEY = process.env.STEAM_WEEKLYKEY;
+const STEAM_STEAMID = process.env.STEAM_STEAMID;
 
 interface Heartbeat {
   time: number;
@@ -153,6 +155,57 @@ async function getGitHubWeeklyContributions(): Promise<number> {
   }
 }
 
+interface SteamResponse {
+  response?: {
+    games?: {
+      playtime_2weeks?: number;
+    }[];
+  };
+}
+
+async function get2WeeklySteamPlaytime(): Promise<string> {
+  if (!STEAM_WEEKLYKEY || !STEAM_STEAMID) {
+    console.error("Steam API key or Steam ID is missing.");
+    return "0h 0m";
+  }
+
+  const steam2WeeklyUrl = `http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${STEAM_WEEKLYKEY}&steamid=${STEAM_STEAMID}&format=json`
+  
+  try {
+    const steamresponse = await fetch(steam2WeeklyUrl);
+    
+    if (!steamresponse.ok) {
+      console.error(`Steam API returned error: ${steamresponse.status} ${steamresponse.statusText}`);
+
+      try {
+        const text = await steamresponse.text();
+        console.error(`Steam API response body: ${text}`);
+      } catch (e) {
+        console.error("Could not read Steam API error response body.");
+      }
+      return "0h 0m";
+    }
+
+    const steamdata = await steamresponse.json() as SteamResponse;
+    let totalMinutes = 0;
+
+    if (steamdata && steamdata.response && steamdata.response.games) {
+      const games = steamdata.response.games;
+      for (const game of games) {
+        if (game.playtime_2weeks) {
+          totalMinutes += game.playtime_2weeks;
+        }
+      }
+    }
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  } catch (error) {
+    console.error("Error fetching Steam playtime:", error);
+    return "0h 0m";
+  }
+}
+
 export default function bnaweekly(app: App) {
   app.command("/bnaweekly", async ({ ack, respond, command, client }) => {
     await ack();
@@ -161,6 +214,7 @@ export default function bnaweekly(app: App) {
     const weeklyGitHub = await getGitHubWeeklyContributions();
     const userInfo = await client.users.info({ user: SLACK_USERID! });
     const SlackPFPUrl = userInfo.user?.profile?.image_192 || userInfo.user?.profile?.image_original || "";
+    const steamPlaytime = await get2WeeklySteamPlaytime();
 
     await respond({
       response_type: "in_channel",
@@ -176,7 +230,7 @@ export default function bnaweekly(app: App) {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Hackatime:* ${weeklyHackTime}\n*GitHub Contributions:* ${weeklyGitHub}`,
+            text: `*Hackatime:* ${weeklyHackTime}\n*GitHub Contributions:* ${weeklyGitHub}\n*Steam Playtime (2 weeks):* ${steamPlaytime}`,
           },
           accessory: {
             type: "image",
