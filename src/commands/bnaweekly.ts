@@ -2,10 +2,12 @@ import { App } from "@slack/bolt";
 
 const HACKATIME_API_KEY = process.env.HACKATIME_API_KEY;
 const SLACK_USERID = process.env.SLACK_USERID;
-const GITHUB_TOKEN = process.env.GITHUB_WEEKLYTOKEN
+const GITHUB_TOKEN = process.env.GITHUB_WEEKLYTOKEN;
 const GITHUB_USERNAME = process.env.GITHUB_WEEKLYUSERNAME;
 const STEAM_WEEKLYKEY = process.env.STEAM_WEEKLYKEY;
 const STEAM_STEAMID = process.env.STEAM_STEAMID;
+const LASTFM_APIKEY = process.env.LASTFM_APIKEY;
+const LASTFM_USERNAME = process.env.LASTFM_USERNAME;
 
 interface Heartbeat {
   time: number;
@@ -169,13 +171,15 @@ async function get2WeeklySteamPlaytime(): Promise<string> {
     return "0h 0m";
   }
 
-  const steam2WeeklyUrl = `http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${STEAM_WEEKLYKEY}&steamid=${STEAM_STEAMID}&format=json`
-  
+  const steam2WeeklyUrl = `http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${STEAM_WEEKLYKEY}&steamid=${STEAM_STEAMID}&format=json`;
+
   try {
     const steamresponse = await fetch(steam2WeeklyUrl);
-    
+
     if (!steamresponse.ok) {
-      console.error(`Steam API returned error: ${steamresponse.status} ${steamresponse.statusText}`);
+      console.error(
+        `Steam API returned error: ${steamresponse.status} ${steamresponse.statusText}`
+      );
 
       try {
         const text = await steamresponse.text();
@@ -186,7 +190,7 @@ async function get2WeeklySteamPlaytime(): Promise<string> {
       return "0h 0m";
     }
 
-    const steamdata = await steamresponse.json() as SteamResponse;
+    const steamdata = (await steamresponse.json()) as SteamResponse;
     let totalMinutes = 0;
 
     if (steamdata && steamdata.response && steamdata.response.games) {
@@ -206,6 +210,32 @@ async function get2WeeklySteamPlaytime(): Promise<string> {
   }
 }
 
+interface LastFmResponse {
+  weeklyartistchart?: {
+    artist?: {
+      playcount?: string;
+    }[];
+  };
+}
+
+async function getWeeklyScrobbles(): Promise<string> {
+  let playcount = 0;
+
+  const lastfmresponse = await fetch(
+    `https://ws.audioscrobbler.com/2.0/?method=user.getweeklyartistchart&user=${LASTFM_USERNAME}&api_key=${LASTFM_APIKEY}&format=json`
+  );
+  const data = (await lastfmresponse.json()) as LastFmResponse;
+
+  if (data && data.weeklyartistchart && data.weeklyartistchart.artist) {
+    for (const artist of data.weeklyartistchart.artist) {
+      if (artist.playcount) {
+        playcount += parseInt(artist.playcount, 10);
+      }
+    }
+  }
+  return playcount.toString();
+}
+
 export default function bnaweekly(app: App) {
   app.command("/bnaweekly", async ({ ack, respond, command, client }) => {
     await ack();
@@ -213,8 +243,12 @@ export default function bnaweekly(app: App) {
     const weeklyHackTime = await getWeeklyTime();
     const weeklyGitHub = await getGitHubWeeklyContributions();
     const userInfo = await client.users.info({ user: SLACK_USERID! });
-    const SlackPFPUrl = userInfo.user?.profile?.image_192 || userInfo.user?.profile?.image_original || "";
+    const SlackPFPUrl =
+      userInfo.user?.profile?.image_192 ||
+      userInfo.user?.profile?.image_original ||
+      "";
     const steamPlaytime = await get2WeeklySteamPlaytime();
+    const lastfmWeeklyScrobbled = await getWeeklyScrobbles();
 
     await respond({
       response_type: "in_channel",
@@ -230,23 +264,27 @@ export default function bnaweekly(app: App) {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Hackatime:* ${weeklyHackTime}\n*GitHub Contributions:* ${weeklyGitHub}\n*Steam Playtime (2 weeks):* ${steamPlaytime}`,
+            text:
+              `*Hackatime:* ${weeklyHackTime}\n` +
+              `*GitHub Contributions:* ${weeklyGitHub}\n` +
+              `*Steam Playtime (2 weeks):* ${steamPlaytime}\n` +
+              `*last.fm Scrobbles:* ${lastfmWeeklyScrobbled}`
           },
           accessory: {
             type: "image",
             alt_text: "Profile Pic",
-            image_url: SlackPFPUrl
-          }
+            image_url: SlackPFPUrl,
+          },
         },
         {
-            type: "context",
-            elements: [
-                {
-                    type: "mrkdwn",
-                    text: `<@${command.user_id}>`
-                }
-            ]
-        }
+          type: "context",
+          elements: [
+            {
+              type: "mrkdwn",
+              text: `<@${command.user_id}>`,
+            },
+          ],
+        },
       ],
     });
   });
