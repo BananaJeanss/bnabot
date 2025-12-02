@@ -16,7 +16,7 @@ jobs:
       - name: Build & Restarts bnabot on Nest
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SSH_HOST }}
+          host: hackclub.app
           username: bnajns
           key: ${{ secrets.SSH_KEY }}
           script: |
