@@ -35,6 +35,16 @@
                 "command": "/bnaweekly",
                 "description": "BananaJeans's Weekly Stats",
                 "should_escape": false
+            },
+            {
+                "command": "/bnajoinpersonal",
+                "description": "Adds you to BananaJeans's personal channel",
+                "should_escape": false
+            },
+            {
+                "command": "/bnaneststatus",
+                "description": "Shows my account stats + some nest stats",
+                "should_escape": false
             }
         ]
     },
@@ -43,7 +53,8 @@
             "bot": [
                 "commands",
                 "users.profile:read",
-                "users:read"
+                "users:read",
+                "channels:write.invites"
             ]
         }
     },
