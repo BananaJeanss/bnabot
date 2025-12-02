@@ -1,0 +1,27 @@
+name: Deploy to Nest
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build & Restarts bnabot on Nest
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: bnajns
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/bnabot || exit 1
+            git pull || exit 1
+            pnpm i || exit 1
+            pnpm run build || exit 1
+            systemctl --user restart bnabot.service || exit 1
