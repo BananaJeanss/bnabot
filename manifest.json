@@ -1,0 +1,58 @@
+{
+    "display_information": {
+        "name": "BnaBot",
+        "description": "BananaJeans's Personal Bot",
+        "background_color": "#002a42"
+    },
+    "features": {
+        "bot_user": {
+            "display_name": "BnaBot",
+            "always_online": false
+        },
+        "slash_commands": [
+            {
+                "command": "/bnaping",
+                "description": "Ping Pong",
+                "should_escape": false
+            },
+            {
+                "command": "/bnarateuser",
+                "description": "Compliment or Roast yourself",
+                "usage_hint": "[compliment/roast]",
+                "should_escape": false
+            },
+            {
+                "command": "/bnanurburgring",
+                "description": "Fetches Nürburgring Data",
+                "should_escape": false
+            },
+            {
+                "command": "/bnaabout",
+                "description": "See information about BnaBot",
+                "should_escape": false
+            },
+            {
+                "command": "/bnaweekly",
+                "description": "BananaJeans's Weekly Stats",
+                "should_escape": false
+            }
+        ]
+    },
+    "oauth_config": {
+        "scopes": {
+            "bot": [
+                "commands",
+                "users.profile:read",
+                "users:read"
+            ]
+        }
+    },
+    "settings": {
+        "interactivity": {
+            "is_enabled": true
+        },
+        "org_deploy_enabled": false,
+        "socket_mode_enabled": true,
+        "token_rotation_enabled": false
+    }
+}
