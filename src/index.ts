@@ -1,3 +1,4 @@
+import verifyManifest from "#utilities/verifyManifest.js";
 import { App } from "@slack/bolt";
 import { configDotenv } from "dotenv";
 import fs from "fs";
@@ -23,7 +24,7 @@ const app = new App({
   token: SLACK_BOT_TOKEN,
   signingSecret: SLACK_SIGNING_SECRET,
   appToken: SLACK_APP_TOKEN,
-  socketMode: true
+  socketMode: true,
 });
 
 const commandsPath = path.join(__dirname, "commands");
@@ -48,7 +49,23 @@ console.log(`Loaded ${commandCount} commands!`);
 
 (async () => {
   await app.start(process.env.PORT || 3000);
-  const date = (new Date()).toLocaleString();
-  console.log(`💤 bnabot is running, it is ${date}`);
-})();
 
+  // verify/update manifest optionally if app config token is set
+  // was gonna do this but tokens reset every 12 hours and i cba to do rotating
+  // this probably does not work because i kept getting invalid token errors
+  if (process.env.SLACK_APP_CONFIG_TOKEN) {
+    if (process.env.SLACK_APP_CONFIG_TOKEN.startsWith("xoxe.xoxp-1")) {
+      try {
+        await verifyManifest(app);
+      } catch (error) {
+        console.error("Failed to verify manifest:", error);
+      }
+    } else {
+      console.warn(
+        "SLACK_APP_CONFIG_TOKEN does not appear to be a valid app config token, skipping manifest verification."
+      );
+    }
+  }
+
+  console.log(`💤 bnabot is running, it is ${new Date().toLocaleString()}`);
+})();
