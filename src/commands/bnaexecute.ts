@@ -162,19 +162,28 @@ export default function bnaexecute(app: App) {
         text: "Not Authorized to share this output.",
         response_type: "ephemeral",
       });
+      return;
     }
 
     if (text && body.channel?.id && body.user?.id) {
-      await client.chat.postMessage({
-        channel: body.channel.id,
-        text: `exec Output shared by <@${body.user.id}>:\n${text}`,
-      });
+      try {
+        await client.chat.postMessage({
+          channel: body.channel.id,
+          text: `exec Output shared by <@${body.user.id}>:\n${text}`,
+        });
 
-      await respond({
-        text: "Output shared to channel!",
-        replace_original: true,
-        response_type: "ephemeral",
-      });
+        await respond({
+          text: "Output shared to channel!",
+          replace_original: true,
+          response_type: "ephemeral",
+        });
+      } catch (error: any) {
+        console.error("[bnaexec] Share failed:", error);
+        await respond({
+          text: `Failed to share output: ${error.message}`,
+          response_type: "ephemeral",
+        });
+      }
     } else {
       await respond({
         text: "Output expired or not found.",
