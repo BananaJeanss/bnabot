@@ -4,8 +4,8 @@ import { uptime } from "process";
 const hostname = "0.0.0.0";
 
 export default function startHealthServer() {
-  const HEALTHCHECK_PORT = parseInt(process.env.HEALTHCHECK_PORT || "3000", 10);
-  
+  const HEALTHSERVER_PORT = parseInt(process.env.HEALTHSERVER_PORT || "3000", 10);
+
   const server = http.createServer((req, res) => {
     if (req.url === "/health") {
       res.statusCode = 200;
@@ -23,9 +23,9 @@ export default function startHealthServer() {
     }
   });
 
-  server.listen(HEALTHCHECK_PORT, hostname, () => {
+  server.listen(HEALTHSERVER_PORT, hostname, () => {
     console.log(
-      `Healthcheck server running at http://${hostname}:${HEALTHCHECK_PORT}/`
+      `Healthcheck server running at http://${hostname}:${HEALTHSERVER_PORT}/`
     );
   });
 }
