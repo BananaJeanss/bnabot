@@ -45,7 +45,7 @@ export default function bnaabout(app: App) {
           accessory: {
             type: "image",
             image_url:
-              "https://github.com/BananaJeanss/bnabot/blob/main/assets/reallycoollogo.png?raw=true",
+              "https://github.com/BananaJeanss/bnabot/blob/main/assets/coolerlogo.png?raw=true",
             alt_text: "BnaBot logo",
           },
         },
