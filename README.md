@@ -12,6 +12,7 @@ My personal bot for Slack with some random & experimental features
 - A lot of commands (from bnaping to bnaexecute)
 - Personal Channel Greeter
 - Cron Jobs
+- /health check endpoint
 - Manifest Verifiction/Updating (untested)
 
 ## Commands

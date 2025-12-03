@@ -1,3 +1,4 @@
+import startHealthServer from "#utilities/healthserver.js";
 import verifyManifest from "#utilities/verifyManifest.js";
 import { App } from "@slack/bolt";
 import { configDotenv } from "dotenv";
@@ -76,6 +77,14 @@ await loadModules("jobs");
       console.warn(
         "SLACK_APP_CONFIG_TOKEN does not appear to be a valid app config token, skipping manifest verification."
       );
+    }
+  }
+
+  if (process.env.ENABLE_HEALTHSERVER === "true") {
+    try {
+      startHealthServer();
+    } catch (err) {
+      console.error("Failed to start health server:", err);
     }
   }
 
