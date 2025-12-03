@@ -7,7 +7,7 @@ const exec = promisify(execCallback);
 
 let lastSSHHit = 0;
 let SSHHitCache = {
-  status: "online", // if this exists, the server is online
+  status: "Online", // if this exists, the server is online
   uptime: 0,
   usercount: 0,
   local: {
@@ -195,9 +195,12 @@ export default function bnaneststatus(app: App) {
       }
     } // else just use cached
 
-    const uptimeHumanReadableDate = new Date(SSHHitCache.uptime * 1000)
-      .toISOString()
-      .substring(11, 19);
+    const days = Math.floor(SSHHitCache.uptime / 86400);
+    const hours = Math.floor((SSHHitCache.uptime % 86400) / 3600);
+    const minutes = Math.floor((SSHHitCache.uptime % 3600) / 60);
+    const seconds = Math.floor(SSHHitCache.uptime % 60);
+    const uptimeHumanReadableDate = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+
     await respond({
       response_type: "in_channel",
       blocks: [
@@ -222,9 +225,7 @@ export default function bnaneststatus(app: App) {
           fields: [
             {
               type: "mrkdwn",
-              text: `*Status:* ${SSHHitCache.status}\n
-              *Uptime:* ${uptimeHumanReadableDate}\n
-              *User Count:* ${SSHHitCache.usercount}\n`,
+              text: `*Status:* ${SSHHitCache.status}\n*Uptime:* ${uptimeHumanReadableDate}\n*User Count:* ${SSHHitCache.usercount}\n`,
             },
           ],
         },
@@ -235,16 +236,17 @@ export default function bnaneststatus(app: App) {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Account Statistics*:\n
-                *Memory:* ${SSHHitCache.local.memory.used.toFixed(
-                  2
-                )}GB / ${SSHHitCache.local.memory.limit.toFixed(2)}GB\n
-                *Disk:* ${SSHHitCache.local.disk.used.toFixed(
-                  2
-                )}GB / ${SSHHitCache.local.disk.limit.toFixed(2)}GB\n
-                *Running services:* ${
-                  SSHHitCache.local.systemdservicesrunning
-                }\n`,
+            text: `*Account Statistics*:\n*Memory:* ${SSHHitCache.local.memory.used.toFixed(
+              2
+            )}GB / ${SSHHitCache.local.memory.limit.toFixed(
+              2
+            )}GB\n*Disk:* ${SSHHitCache.local.disk.used.toFixed(
+              2
+            )}GB / ${SSHHitCache.local.disk.limit.toFixed(
+              2
+            )}GB\n*Running services:* ${
+              SSHHitCache.local.systemdservicesrunning
+            }\n`,
           },
         },
         {
@@ -254,22 +256,36 @@ export default function bnaneststatus(app: App) {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Nest Statistics*:\n
-                *Memory:* ${SSHHitCache.global.memory.used.toFixed(
-                  2
-                )}GB / ${SSHHitCache.global.memory.max.toFixed(2)}GB\n
-                *Disk:* ${SSHHitCache.global.disk.used.toFixed(
-                  2
-                )}GB / ${SSHHitCache.global.disk.max.toFixed(2)}GB\n
-                *CPU Load (1m, 5m, 15m):* ${SSHHitCache.global.cpu.oneminload.toFixed(
-                  2
-                )}, ${SSHHitCache.global.cpu.fiveminload.toFixed(
+            text: `*Nest Statistics*:\n*Memory:* ${SSHHitCache.global.memory.used.toFixed(
               2
-            )}, ${SSHHitCache.global.cpu.fifteenminload.toFixed(2)}\n
-                *Running services:* ${
-                  SSHHitCache.global.systemdservicesrunning
-                }\n`,
+            )}GB / ${SSHHitCache.global.memory.max.toFixed(
+              2
+            )}GB\n*Disk:* ${SSHHitCache.global.disk.used.toFixed(
+              2
+            )}TB / ${SSHHitCache.global.disk.max.toFixed(
+              2
+            )}TB\n*CPU Load (1m, 5m, 15m):* ${SSHHitCache.global.cpu.oneminload.toFixed(
+              2
+            )}, ${SSHHitCache.global.cpu.fiveminload.toFixed(
+              2
+            )}, ${SSHHitCache.global.cpu.fifteenminload.toFixed(
+              2
+            )}\n*Running services:* ${
+              SSHHitCache.global.systemdservicesrunning
+            }\n`,
           },
+        },
+        {
+          type: "divider",
+        },
+        {
+          type: "context",
+          elements: [
+            {
+              type: "mrkdwn",
+              text: `<@${command.user_id}>`,
+            },
+          ],
         },
       ],
     });
