@@ -1,9 +1,11 @@
 import http from "http";
 import { uptime } from "process";
-const HEALTHCHECK_PORT = parseInt(process.env.HEALTHCHECK_PORT || "3000", 10);
+
 const hostname = "0.0.0.0";
 
 export default function startHealthServer() {
+  const HEALTHCHECK_PORT = parseInt(process.env.HEALTHCHECK_PORT || "3000", 10);
+  
   const server = http.createServer((req, res) => {
     if (req.url === "/health") {
       res.statusCode = 200;
@@ -16,8 +18,8 @@ export default function startHealthServer() {
         })
       );
     } else {
-        res.statusCode = 404;
-        res.end("Not Found");
+      res.statusCode = 404;
+      res.end("Not Found");
     }
   });
 
