@@ -61,13 +61,14 @@
     "oauth_config": {
         "scopes": {
             "bot": [
+                "channels:read",
+                "channels:write.invites",
                 "commands",
+                "groups:read",
+                "mpim:read",
                 "users.profile:read",
                 "users:read",
-                "channels:write.invites",
-                "channels:read",
-                "groups:read",
-                "mpim:read"
+                "chat:write"
             ]
         }
     },
