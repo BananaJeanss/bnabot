@@ -45,6 +45,11 @@
                 "command": "/bnaneststatus",
                 "description": "Shows my account stats + some nest stats",
                 "should_escape": false
+            },
+            {
+                "command": "/bnauptime",
+                "description": "Checks Uptime Kuma service statuses",
+                "should_escape": false
             }
         ]
     },
