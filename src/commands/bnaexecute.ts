@@ -6,6 +6,8 @@ const AllowedUser = process.env.SLACK_USERID;
 
 const exec = promisify(execCallback);
 
+const outputCache = new Map<string, string>();
+
 // Helper to truncate long outputs to avoid Slack API errors
 function truncate(str: string, maxLength: number = 2000): string {
   str = str.replace(/`/g, "'");
@@ -67,10 +69,61 @@ export default function bnaexecute(app: App) {
       if (!responseText && !stdout && !stderr) {
         responseText = "Command executed successfully with no output.";
       }
+
+      const blocks: any[] = [];
+      if (stdout) {
+        blocks.push({
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Output:*\n\`\`\`${truncate(stdout)}\`\`\``,
+          },
+        });
+      }
+      if (stderr) {
+        blocks.push({
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Error:*\n\`\`\`${truncate(stderr)}\`\`\``,
+          },
+        });
+      }
+      if (blocks.length === 0) {
+        blocks.push({
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "Command executed successfully with no output.",
+          },
+        });
+      }
+
+      const cacheId =
+        Date.now().toString() + Math.random().toString(36).substring(7);
+      outputCache.set(cacheId, responseText);
+      setTimeout(() => outputCache.delete(cacheId), 10 * 60 * 1000);
+
+      blocks.push({
+        type: "actions",
+        elements: [
+          {
+            type: "button",
+            text: {
+              type: "plain_text",
+              text: "Share to Channel",
+            },
+            value: cacheId,
+            action_id: "share_exec_output",
+          },
+        ],
+      });
+
       if (responseText) {
         await respond({
           response_type: "ephemeral",
           text: responseText,
+          blocks: blocks,
         });
       }
     } catch (error: any) {
@@ -92,6 +145,40 @@ export default function bnaexecute(app: App) {
       await respond({
         response_type: "ephemeral",
         text: errorText,
+      });
+    }
+  });
+
+  app.action("share_exec_output", async ({ ack, body, client, respond }) => {
+    await ack();
+
+    // @ts-ignore
+    const action = body.actions[0];
+    const cacheId = action.value;
+    const text = outputCache.get(cacheId);
+
+    if (body.user?.id !== AllowedUser) {
+      await respond({
+        text: "Not Authorized to share this output.",
+        response_type: "ephemeral",
+      });
+    }
+
+    if (text && body.channel?.id && body.user?.id) {
+      await client.chat.postMessage({
+        channel: body.channel.id,
+        text: `exec Output shared by <@${body.user.id}>:\n${text}`,
+      });
+
+      await respond({
+        text: "Output shared to channel!",
+        replace_original: true,
+        response_type: "ephemeral",
+      });
+    } else {
+      await respond({
+        text: "Output expired or not found.",
+        response_type: "ephemeral",
       });
     }
   });
