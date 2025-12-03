@@ -50,6 +50,11 @@
                 "command": "/bnauptime",
                 "description": "Checks Uptime Kuma service statuses",
                 "should_escape": false
+            },
+            {
+                "command": "/bnaexecute",
+                "description": "[BnaJns only] Execute a comamnd on Nest",
+                "should_escape": false
             }
         ]
     },
