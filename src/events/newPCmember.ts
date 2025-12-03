@@ -1,7 +1,7 @@
 import { App } from "@slack/bolt";
 
 const PERSONALCHANNEL_ID = process.env.PERSONALCHANNEL_ID;
-const SLACKUSER_ID = process.env.SLACKUSER_ID;
+const SLACKUSER_ID = process.env.SLACK_USERID;
 
 export default function newPCmember(app: App) {
   app.event("member_joined_channel", async ({ event, client }) => {
