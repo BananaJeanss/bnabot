@@ -27,25 +27,37 @@ const app = new App({
   socketMode: true,
 });
 
-const commandsPath = path.join(__dirname, "commands");
-const commandsFiles = fs
-  .readdirSync(commandsPath)
-  .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
-let commandCount = 0;
+async function loadModules(folderName: string) {
+  const folderPath = path.join(__dirname, folderName);
+  if (!fs.existsSync(folderPath)) return;
 
-for (const file of commandsFiles) {
-  const module = await import(`./commands/${file}`);
-  const register = module.default;
-  if (typeof register === "function") {
-    try {
-      register(app);
-      commandCount++;
-    } catch (error) {
-      console.error(`Error registering command from file ${file}:`, error);
+  const files = fs
+    .readdirSync(folderPath)
+    .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
+
+  let count = 0;
+  for (const file of files) {
+    const module = await import(`./${folderName}/${file}`);
+    const register = module.default;
+    if (typeof register === "function") {
+      try {
+        register(app);
+        count++;
+      } catch (error) {
+        console.error(
+          `Error registering ${folderName} from file ${file}:`,
+          error
+        );
+      }
     }
   }
+  console.log(`Loaded ${count} ${folderName}!`);
 }
-console.log(`Loaded ${commandCount} commands!`);
+
+// load the stuff
+await loadModules("commands");
+await loadModules("events");
+await loadModules("jobs");
 
 (async () => {
   await app.start(process.env.PORT || 3000);
